@@ -1,0 +1,117 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>享定存利息计算器</title>
+<style>
+*{box-sizing:border-box;font-family:"Microsoft YaHei",sans-serif}
+body{background:#fff8f0;padding:16px;margin:0}
+.container{max-width:600px;margin:auto}
+.top-bar{display:flex;justify-content:space-between;align-items:center;margin-bottom:18px;gap:10px;flex-wrap:wrap}
+.group{display:flex;gap:10px}
+.btn{border:none;border-radius:999px;padding:8px 12px;font-size:14px;cursor:pointer;background:#ff8822;color:#fff;font-weight:bold}
+.btn.gray{background:#eee;color:#333}
+.card{background:#fff;border-radius:20px;padding:20px;margin-bottom:16px;box-shadow:0 3px 10px #ffddbb88}
+.row{margin-bottom:14px}
+label{display:block;margin-bottom:6px;font-weight:500;color:#444}
+.input-box{width:100%;border:2px solid #ffcc99;border-radius:14px;padding:10px 12px;font-size:16px;outline:none}
+.input-box:focus{border-color:#ff8822;box-shadow:0 0 0 3px #ffddbb}
+.result-card{background:#fff9f2;padding:14px;border-radius:16px}
+.highlight-box{border:3px solid #ff8822;border-radius:14px;padding:12px;background:#fff;margin:10px 0;font-weight:bold;color:#f60;font-size:20px}
+.desc{font-size:13px;color:#777;margin-top:8px}
+.en .zh,.zh .en{display:none}
+.old{font-size:22px}
+.old .btn{padding:14px 18px;font-size:20px}
+.old .input-box{font-size:22px;padding:14px 12px}
+.old .result-card{font-size:24px}
+</style>
+</head>
+<body class="zh">
+<div class="container">
+  <div class="top-bar">
+    <div class="group">
+      <button class="btn" id="maturityBtn">📅 <span class="zh">到期支取</span><span class="en">Maturity</span></button>
+      <button class="btn gray" id="earlyBtn">🏧 <span class="zh">提前支取</span><span class="en">Early Withdraw</span></button>
+    </div>
+    <div class="group">
+      <button class="btn gray" id="langBtn">🌐 EN</button>
+      <button class="btn gray" id="oldBtn">👓 <span class="zh">老年版</span><span class="en">Senior Mode</span></button>
+    </div>
+  </div>
+
+  <div class="card">
+    <div class="row">
+      <label>💰 <span class="zh">本金（元）</span><span class="en">Principal (CNY)</span></label>
+      <input class="input-box" id="principal" type="number" value="10000">
+    </div>
+    <div class="row">
+      <label>📆 <span class="zh">存期</span><span class="en">Term</span></label>
+      <select class="input-box" id="term">
+        <option value="0.25">3个月 (1.00%)</option>
+        <option value="0.5">6个月 (1.20%)</option>
+        <option value="1">1年 (1.30%)</option>
+        <option value="2">2年 (1.40%)</option>
+      </select>
+    </div>
+    <div class="row" id="withdrawRow" style="display:none">
+      <label>💸 <span class="zh">本次支取金额</span><span class="en">Withdraw Amount</span></label>
+      <input class="input-box" id="withdrawAmt" type="number" value="0">
+    </div>
+    <div class="row">
+      <button class="btn" id="calcBtn">🧮 <span class="zh">计算</span><span class="en">Calculate</span></button>
+      <button class="btn gray" id="resetBtn">🔄 <span class="zh">清空</span><span class="en">Reset</span></button>
+    </div>
+  </div>
+
+  <div class="card result-card" id="resultBox">
+    <div class="zh">结果将在这里展示</div>
+    <div class="en">Result will show here</div>
+  </div>
+  <div class="desc zh">⚠️ 提示：提前支取部分按活期0.05%计息，留存部分按原定期利率计息，实际以网点挂牌为准</div>
+  <div class="desc en">⚠️ Note: Early withdrawal is calculated at 0.05% current rate. Subject to bank quotation.</div>
+</div>
+
+<script>
+const rateMap={0.25:0.01,0.5:0.012,1:0.013,2:0.014};
+const currentRate=0.0005;
+let isMaturity=true,isEn=false;
+const body=document.body;
+
+maturityBtn.onclick=()=>{
+  isMaturity=true;maturityBtn.classList.remove("gray");earlyBtn.classList.add("gray");
+  withdrawRow.style.display="none";
+};
+earlyBtn.onclick=()=>{
+  isMaturity=false;earlyBtn.classList.remove("gray");maturityBtn.classList.add("gray");
+  withdrawRow.style.display="block";
+};
+langBtn.onclick=()=>{
+  isEn=!isEn;
+  body.classList.toggle("zh",!isEn);body.classList.toggle("en",isEn);
+  langBtn.innerHTML=isEn?"🌐 中文":"🌐 EN";
+};
+oldBtn.onclick=()=>body.classList.toggle("old");
+resetBtn.onclick=()=>{
+  principal.value=10000;withdrawAmt.value=0;term.value="0.25";
+  resultBox.innerHTML=isEn?"Result will show here":"结果将在这里展示";
+};
+calcBtn.onclick=()=>{
+  const p=Number(principal.value),t=Number(term.value),w=Number(withdrawAmt.value||0),r=rateMap[t];
+  if(p<=0){resultBox.textContent=isEn?"Please input valid principal":"请输入有效的本金";return}
+  if(isMaturity){
+    const interest=p*r*t,total=p+interest;
+    resultBox.innerHTML=isEn?
+      `<div>Principal: ${p.toFixed(2)} CNY</div><div class="highlight-box">✅ Maturity Interest: ${interest.toFixed(2)} CNY</div><div>Total: ${total.toFixed(2)} CNY</div>`:
+      `<div>本金：${p.toFixed(2)} 元</div><div class="highlight-box">✅ 到期利息：${interest.toFixed(2)} 元</div><div>本息合计：${total.toFixed(2)} 元</div>`;
+  }else{
+    if(w<=0||w>p){resultBox.textContent=isEn?"Please input valid withdraw amount":"请输入有效的支取金额（≤本金）";return}
+    const remain=p-w,wi=w*currentRate*t,ri=remain*r*t,totalInterest=wi+ri,total=p+totalInterest;
+    resultBox.innerHTML=isEn?
+      `<div>Principal: ${p.toFixed(2)} CNY</div><div class="highlight-box">💸 Withdraw Interest: ${wi.toFixed(2)} CNY</div><div>Remaining Interest: ${ri.toFixed(2)} CNY</div><div>Total Interest: ${totalInterest.toFixed(2)} CNY</div><div>Total Amount: ${total.toFixed(2)} CNY</div>`:
+      `<div>本金：${p.toFixed(2)} 元</div><div class="highlight-box">💸 支取部分活期利息：${wi.toFixed(2)} 元</div><div>留存部分定期利息：${ri.toFixed(2)} 元</div><div>利息合计：${totalInterest.toFixed(2)} 元</div><div>本息合计：${total.toFixed(2)} 元</div>`;
+  }
+};
+</script>
+</body>
+</html>
